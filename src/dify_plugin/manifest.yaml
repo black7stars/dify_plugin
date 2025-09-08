@@ -1,0 +1,11 @@
+identity:
+  author: your-name
+  name: qq_email_crawler
+label:
+  en_US: QQ Email Crawler
+  zh_Hans: QQ邮箱爬虫
+description:
+  en_US: Crawl emails from QQ mailbox and merge them into a document
+  zh_Hans: 从QQ邮箱爬取邮件并合并为文档
+icon: icon.png
+tags: ['data-processing', 'productivity']

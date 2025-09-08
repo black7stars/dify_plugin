@@ -6,7 +6,7 @@ setup(
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=[
-        # 你的依赖项
+        "dify_plugin",
     ],
     extras_require={
         "dev": [

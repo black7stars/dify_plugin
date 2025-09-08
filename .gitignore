@@ -231,3 +231,6 @@ env/
 .coverage
 htmlcov/
 .pytest_cache/
+
+#图片
+src/dify_plugin/_assets/icon.png
