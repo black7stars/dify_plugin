@@ -58,16 +58,69 @@ class CrawlEmailsTool(Tool):
                 # 获取邮件
                 status, msg_data = mail.fetch(email_id, "(RFC822)")
 
-                # 解析邮件
-                msg = email.message_from_bytes(msg_data[0][1])
+                # 安全获取邮件内容
+                if isinstance(msg_data, tuple) and msg_data[0] is not None:
+                    data_part = msg_data[0]
+                    if isinstance(data_part, tuple) and len(data_part) > 1:
+                        raw_email = data_part[1]
+
+                        # 确保数据是字节类型
+                        if isinstance(raw_email, bytes):
+                            msg = email.message_from_bytes(raw_email)
+                        elif isinstance(raw_email, tuple) and len(raw_email) > 0:
+                            # 检查第一个元素是否为bytes类型
+                            if isinstance(raw_email[0], bytes):
+                                msg = email.message_from_bytes(raw_email[0])
+                            else:
+                                # 如果不是bytes类型，尝试转换为bytes
+                                try:
+                                    # 对于int或其他类型，先转换为字符串再编码为bytes
+                                    if isinstance(raw_email[0], (int, float, str)):
+                                        msg = email.message_from_bytes(
+                                            str(raw_email[0]).encode("utf-8")
+                                        )
+                                    else:
+                                        # 对于其他类型，尝试直接转换为bytes
+                                        msg = email.message_from_bytes(
+                                            bytes(raw_email[0])
+                                        )
+                                except (TypeError, ValueError) as e:
+                                    raise TypeError(
+                                        f"无法将消息数据转换为bytes: {e}, 类型: {type(raw_email[0])}"  # noqa: E501
+                                    )
+                        else:
+                            raise TypeError(
+                                "Unexpected tuple structure in message data"
+                            )
+                    else:
+                        raise ValueError(
+                            "Invalid message data structure - unexpected format"
+                        )
+                else:
+                    raise ValueError("Invalid message data structure")
+
+                # 添加 None 检查
+                if msg is None:
+                    raise ValueError("Failed to parse email message")
 
                 # 解析邮件信息
-                subject = self._decode_header(msg["Subject"])
-                sender = self._decode_header(msg["From"])
-                date_received = msg["Date"]
+                subject = self._decode_header(msg.get("Subject"))
+                sender = self._decode_header(msg.get("From"))
+                date_received = msg.get("Date")
+
+                # 添加 None 检查
+                if subject is None:
+                    subject = "无主题"
+                if sender is None:
+                    sender = "未知发件人"
+                if date_received is None:
+                    date_received = "未知日期"
 
                 # 获取邮件正文
-                body = self._get_email_body(msg)
+                try:
+                    body = self._get_email_body(msg)
+                except Exception as e:
+                    body = f"无法解析邮件正文: {str(e)}"
 
                 # 格式化邮件内容
                 formatted_email = self._format_email_content(
@@ -131,20 +184,24 @@ class CrawlEmailsTool(Tool):
             )
         else:  # txt
             return (
-                f"主题: {subject}\n发件人: {sender}\n日期: {date}\n\n" f"{body}\n\n{'-'*50}\n"
+                f"主题: {subject}\n发件人: {sender}\n日期: {date}\n\n"
+                f"{body}\n\n{'-'*50}\n"
             )
 
     def _merge_emails(self, emails_content, format_type):
         """合并所有邮件内容"""
         if format_type == "markdown":
-            return f"# QQ邮箱邮件汇总 ({date.today().strftime('%Y-%m-%d')})\n\n" + "\n".join(
-                emails_content
+            return (
+                f"# QQ邮箱邮件汇总 ({date.today().strftime('%Y-%m-%d')})\n\n"
+                + "\n".join(emails_content)
             )
         elif format_type == "html":
-            return f"<h1>QQ邮箱邮件汇总 ({date.today().strftime('%Y-%m-%d')})</h1>" + "".join(
-                emails_content
+            return (
+                f"<h1>QQ邮箱邮件汇总 ({date.today().strftime('%Y-%m-%d')})</h1>"
+                + "".join(emails_content)
             )
         else:  # txt
-            return f"QQ邮箱邮件汇总 ({date.today().strftime('%Y-%m-%d')})\n\n" + "\n".join(
-                emails_content
+            return (
+                f"QQ邮箱邮件汇总 ({date.today().strftime('%Y-%m-%d')})\n\n"
+                + "\n".join(emails_content)
             )
