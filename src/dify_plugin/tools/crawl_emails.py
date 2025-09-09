@@ -5,7 +5,7 @@ from datetime import date
 from email.header import decode_header
 from typing import Any
 
-from dify_plugin import Tool
+from dify_plugin import Tool  # type: ignore
 from dify_plugin.entities.tool import ToolInvokeMessage
 
 
@@ -70,7 +70,7 @@ class CrawlEmailsTool(Tool):
                         elif isinstance(raw_email, tuple) and len(raw_email) > 0:
                             # 检查第一个元素是否为bytes类型
                             if isinstance(raw_email[0], bytes):
-                                msg = email.message_from_bytes(raw_email[0])
+                                msg = email.message_from_bytes(raw_email[0])  # type: ignore
                             else:
                                 # 如果不是bytes类型，尝试转换为bytes
                                 try:
